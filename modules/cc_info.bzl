@@ -100,20 +100,14 @@ def _implementation(target, ctx, attr):
         return None
 
     compilation_context = target[CcInfo].compilation_context
-    all_headers = compilation_context.headers
 
     # Only this target's own generated headers need to be built; headers of dependencies are
     # contributed by the aspect application on those dependencies.
     direct_headers = getattr(compilation_context, "direct_headers", None)
-    generated_headers = [it for it in (direct_headers if direct_headers != None else all_headers.to_list()) if not it.is_source]
-
-    # Flattening that dep set is acceptable overhead given that we serialize its members
-    # anyway in the compilation-context message. Should be dropped if we stop serializing there.
-    source_headers = [it for it in all_headers.to_list() if it.is_source]
+    generated_headers = [it for it in (direct_headers if direct_headers != None else compilation_context.headers.to_list()) if not it.is_source]
 
     return intellij_module.result(
         outputs = {
-            intellij_output_groups.SYNC: intellij_common.depset(source_headers),
             intellij_output_groups.BUILD: intellij_common.depset(generated_headers),
         },
         value = intellij_common.struct(
